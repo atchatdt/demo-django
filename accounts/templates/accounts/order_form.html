@@ -2,9 +2,22 @@
 {% load static%}
 {% block content %}
 
-<form action="" method="POST">
-    {% csrf_token %}
-    {{form}}
-    <input type="submit" name="submit" value="Submit">
-</form>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-body">
+            <form action="" method="POST">
+                {% csrf_token %}
+                {{form}}
+                {{formSet.management_form}}
+                {% for form in formSet%}
+                    {{form}}
+                    <hr>
+                {% endfor%}
+                <input type="submit" name="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+</div>
+
+
 {% endblock %}
