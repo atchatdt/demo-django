@@ -1,11 +1,31 @@
 from django.shortcuts import render, redirect
 from django.forms import inlineformset_factory
 from django.http import HttpResponse
-from .models import *
-from .form import OrderForm
+from django.contrib.auth.forms import UserCreationForm
 
+from .models import *
+from .form import OrderForm, CreateUserForm
+from .filters import OrderFilter
 
 # Create your views here.
+
+
+def registerPage(request):
+    form = CreateUserForm()
+
+    if request.method == 'POST':
+        form = CreateUserForm(request.POST)
+        if form.is_valid():
+            form.save()
+
+
+    context = {'form': form}
+    return render(request, 'accounts/register.html', context)
+
+
+def loginPage(request):
+    context = {}
+    return render(request, 'accounts/login.html')
 
 
 def home(request):
@@ -30,11 +50,16 @@ def products(request):
 
 def customer(request, pk_test):
     customer = Customer.objects.get(id=pk_test)
-    orders = customer.order_set.all()
 
+    orders = customer.order_set.all()
     total_orders = orders.count()
+
+    myFilter = OrderFilter(request.GET, queryset=orders)
+    orders = myFilter.qs
+
     context = {'customer': customer, 'orders': orders,
-               'total_orders': total_orders}
+               'total_orders': total_orders, 'myFilter': myFilter}
+
     return render(request, 'accounts/customer.html', context)
 
 
