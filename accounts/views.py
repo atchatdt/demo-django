@@ -16,11 +16,9 @@ from .decorators import unauthenticated_user, allowed_users, admin_only
 
 # Create your views here.
 
-# REGISTER
-
-
 @unauthenticated_user
 def registerPage(request):
+    """ REGISTER """
     # check đã login chưa
     form = CreateUserForm()
 
@@ -32,9 +30,13 @@ def registerPage(request):
             # Xử lý group
             group = Group.objects.get(name='customer')
             user.groups.add(group)
-            
+
+            Customer.objects.create(
+                user=user,
+                name=user.username,
+                email= user.email,
+            )
             username = form.cleaned_data.get('username')
-            
             messages.success(request, 'Account was created for ' + username)
 
             return redirect('login')
@@ -42,11 +44,10 @@ def registerPage(request):
     context = {'form': form}
     return render(request, 'accounts/register.html', context)
 
-# LOGIN
-
 
 @unauthenticated_user
 def loginPage(request):
+    """ LOGIN """
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -61,56 +62,62 @@ def loginPage(request):
     context = {}
     return render(request, 'accounts/login.html', context)
 
-# LOGOUT
-
 
 def logoutUser(request):
+    """ LOGOUT """
     logout(request)
     return redirect('login')
 
-# USER PAGE
-
 
 @login_required(login_url='login')
+@allowed_users(allowed_roles=['customer'])
 def userPage(request):
-    context = {}
+    ''' USER PAGE '''
+    orders = request.user.customer.order_set.all()
+
+    total_orders = orders.count()
+    delivered = orders.filter(status='Delivered').count()
+    pending = orders.filter(status='Pending').count()
+
+    context = {'orders': orders, 'total_orders': total_orders,
+               'delivered': delivered, 'pending': pending}
     return render(request, 'accounts/user.html', context)
 
-
-# HOME PAGE
 # Bắt buộc login mới vào
+
+
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['admin'])
 @admin_only
 def home(request):
+    ''' HOME PAGE '''
     orders = Order.objects.order_by('date_created').all()
     customers = Customer.objects.all()
 
     total_customers = customers.count()
+
     total_orders = orders.count()
     delivered = orders.filter(status='Delivered').count()
     pending = orders.filter(status='Pending').count()
+
     orders = orders[0:5]
     context = {'orders': orders, 'customers': customers, 'total_customers': total_customers,
                'total_orders': total_orders, 'delivered': delivered, 'pending': pending}
     return render(request, 'accounts/dashboard.html', context)
 
-# PRODUCTS PAGE
-
 
 @login_required(login_url='login')
 @allowed_users(allowed_roles=['admin'])
 def products(request):
+    ''' PRODUCTS PAGE '''
     products = Product.objects.all()
 
     return render(request, 'accounts/products.html', {'products': products})
-
-# CUSTOMER PAGE
 
 
 @login_required(login_url='login')
 @allowed_users(allowed_roles=['admin'])
 def customer(request, pk_test):
+    ''' CUSTOMER PAGE '''
     customer = Customer.objects.get(id=pk_test)
 
     orders = customer.order_set.all()
@@ -124,12 +131,11 @@ def customer(request, pk_test):
 
     return render(request, 'accounts/customer.html', context)
 
-# ORDER PAGE
-
 
 @login_required(login_url='login')
 @allowed_users(allowed_roles=['admin'])
 def createOrder(request, pk):
+    ''' ORDER PAGE '''
     OrderFormSet = inlineformset_factory(
         Customer, Order, fields=('product', 'status'), extra=10)
     customer = Customer.objects.get(id=pk)
@@ -143,12 +149,11 @@ def createOrder(request, pk):
     context = {'formSet': formSet}
     return render(request, 'accounts/order_form.html', context)
 
-# UPDATE ORDER
-
 
 @login_required(login_url='login')
 @allowed_users(allowed_roles=['admin'])
 def updateOrder(request, pk):
+    ''' UPDATE ORDER '''
     order = Order.objects.get(id=pk)
     form = OrderForm(instance=order)
 
@@ -161,12 +166,11 @@ def updateOrder(request, pk):
     context = {'form': form}
     return render(request, 'accounts/order_form.html', context)
 
-# DELETE ORDER
-
 
 @login_required(login_url='login')
 @allowed_users(allowed_roles=['admin'])
 def deleteOrder(request, pk):
+    ''' DELETE ORDER '''
     order = Order.objects.get(id=pk)
 
     if request.method == 'POST':
