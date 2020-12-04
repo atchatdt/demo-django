@@ -10,6 +10,8 @@ from django.contrib.auth.decorators import login_required
 from .models import *
 from .form import OrderForm, CreateUserForm
 from .filters import OrderFilter
+from accounts.my_middleware import simple_middleware
+
 
 # Create your views here.
 
@@ -60,6 +62,7 @@ def logoutUser(request):
 
 # Bắt buộc login mới vào
 @login_required(login_url='login')
+@simple_middleware
 def home(request):
     orders = Order.objects.order_by('date_created').all()
     customers = Customer.objects.all()
