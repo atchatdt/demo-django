@@ -27,16 +27,8 @@ def registerPage(request):
         form = CreateUserForm(request.POST)
         if form.is_valid():
             user = form.save()
-
             # Xử lý group
-            group = Group.objects.get(name='customer')
-            user.groups.add(group)
-
-            Customer.objects.create(
-                user=user,
-                name=user.username,
-                email=user.email,
-            )
+           
             username = form.cleaned_data.get('username')
             messages.success(request, 'Account was created for ' + username)
 
@@ -198,3 +190,7 @@ def accountSettings(request):
 
     context = {'form': form}
     return render(request, 'accounts/account_settings.html', context)
+
+
+
+
